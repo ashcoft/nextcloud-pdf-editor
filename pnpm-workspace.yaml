@@ -1,7 +1,11 @@
 # pnpm 11+ no longer reads settings from the `pnpm` field in package.json or
 # from .npmrc; they live here instead. Both settings below were migrated from
 # there when pnpm was bumped to v12.
-#
+
+# The release-age guard is off (see .npmrc for why): pnpm's default would block
+# the dependency bots from regenerating the lockfile.
+minimumReleaseAge: 0
+
 # overrides: force one Babel major so the config presets and babel-jest resolve
 # the same @babel/core. Without it babel-jest picks core 7 while the presets
 # pick core 8, and jest stops stripping TypeScript.

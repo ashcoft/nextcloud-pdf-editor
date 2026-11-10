@@ -30,9 +30,15 @@ jobs:
       src: ${{ steps.changes.outputs.src }}
 
     steps:
+      # paths-filter needs the repository to compute a diff on push events; it
+      # can query the API for pull_request events but not for a push.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: changes
-        continue-on-error: true
         with:
           filters: |
             src:

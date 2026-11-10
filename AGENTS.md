@@ -171,9 +171,9 @@ pnpm run test:scripts
 ```
 
 `tests/scripts/bump-pdfcraft.test.sh` covers `scripts/bump-pdfcraft.sh`. It stubs `curl` and the
-fetcher, so it needs no network, and exercises the real validation, release resolution, checksum
-selection, pin rewrite and failure restore. The `pdfcraft-bundle` workflow runs it alongside the
-bundle check.
+fetcher, so it needs no network, and exercises the real validation, the no-argument latest-release
+path, checksum selection, the pin rewrite and failure restore. The `pdfcraft-bundle` workflow runs it
+alongside the bundle check.
 
 ### Static Analysis
 

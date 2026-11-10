@@ -136,9 +136,11 @@ class PdfCraftBundleService
     /**
      * Reduce a request path to a safe relative path inside the bundle.
      *
-     * Empty segments, `.` and `..` are refused rather than collapsed, so a
-     * traversal attempt fails instead of quietly resolving to another file. A
-     * request for the bundle root (or for nothing) maps to `index.html`.
+     * The bundle root (an empty path) maps to `index.html`. Any other path is
+     * split on `/` and every segment must be a plain name: an empty segment
+     * (a trailing or doubled slash), `.` and `..` are refused rather than
+     * collapsed, so a traversal or a directory-like URL such as
+     * `index.html/` fails instead of quietly resolving to another file.
      *
      * @throws NotFoundException
      */
@@ -146,17 +148,18 @@ class PdfCraftBundleService
     {
         $path = str_replace('\\', '/', $path);
 
+        if ($path === '') {
+            return 'index.html';
+        }
+
         $segments = [];
         foreach (explode('/', $path) as $segment) {
-            if ($segment === '') {
-                continue;
-            }
-            if ($segment === '.' || $segment === '..' || str_contains($segment, "\0")) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || str_contains($segment, "\0")) {
                 throw new NotFoundException('Invalid path');
             }
             $segments[] = $segment;
         }
 
-        return $segments === [] ? 'index.html' : implode('/', $segments);
+        return implode('/', $segments);
     }
 }

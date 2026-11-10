@@ -20,8 +20,6 @@ export interface LoadResponse {
   canSave: boolean
   /** Direct download URL for the file. */
   url: string
-  /** Editor theme chosen by the administrator. */
-  theme: 'light' | 'dark'
   contentType: string
   /** Largest payload the server will accept, in bytes. */
   maxFileSize: number

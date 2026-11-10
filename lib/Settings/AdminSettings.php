@@ -40,10 +40,10 @@ class AdminSettings implements IDelegatedSettings
     {
         // Only the keys this settings form writes are delegated. A wildcard
         // would let a delegated admin change every future app-config key.
+        // Nextcloud matches these with `preg_match`, which needs delimiters.
         return [
             AppConfig::APP_CONFIG_KEY => [
-                '^Theme$',
-                '^MaxSizeMb$',
+                '/^MaxSizeMb$/',
             ],
         ];
     }

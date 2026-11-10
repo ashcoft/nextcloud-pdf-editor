@@ -11,6 +11,7 @@ namespace OCA\PdfEditor\Service;
 
 use OCA\PdfEditor\AppInfo\Application;
 use OCA\PdfEditor\Config\AppConfig;
+use OCA\PdfEditor\Exception\NoUserSessionException;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -43,7 +44,7 @@ class FileService
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            throw new \RuntimeException('Unauthorized');
+            throw new NoUserSessionException();
         }
 
         $userFolder = $this->rootFolder->getUserFolder($user->getUID());
@@ -110,7 +111,8 @@ class FileService
      */
     public function canSave(File $file): bool
     {
-        return $file->isUpdateable() && Application::isSupportedFile($file->getName());
+        return $file->isUpdateable()
+            && Application::isSupportedFile($file->getName(), $file->getMimeType());
     }
 
     /**
@@ -141,7 +143,7 @@ class FileService
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            throw new \RuntimeException('Unauthorized');
+            throw new NoUserSessionException();
         }
 
         return $this->rootFolder->getUserFolder($user->getUID());

@@ -13,7 +13,6 @@ use OCA\PdfEditor\Config\AppConfig;
 use OCA\PdfEditor\Tests\Fixtures\InMemoryAppConfig;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Test suite for the app-wide editor settings.
@@ -25,34 +24,14 @@ class AppConfigTest extends TestCase
 {
     private function config(?InMemoryAppConfig $store = null): AppConfig
     {
-        return new AppConfig(
-            $store ?? new InMemoryAppConfig(),
-            $this->createMock(LoggerInterface::class),
-        );
+        return new AppConfig($store ?? new InMemoryAppConfig());
     }
 
     public function testDefaults(): void
     {
         $config = $this->config();
 
-        $this->assertSame('light', $config->getTheme());
         $this->assertSame(200 * 1024 * 1024, $config->getMaxFileSize());
-    }
-
-    public function testThemeRoundTrips(): void
-    {
-        $config = $this->config();
-        $config->setTheme('dark');
-
-        $this->assertSame('dark', $config->getTheme());
-    }
-
-    public function testThemeRejectsAnUnknownValue(): void
-    {
-        $config = $this->config();
-        $config->setTheme('neon');
-
-        $this->assertSame('light', $config->getTheme());
     }
 
     public function testMaxFileSizeRoundTrips(): void
@@ -82,11 +61,11 @@ class AppConfigTest extends TestCase
         $this->assertSame(200 * 1024 * 1024, $config->getMaxFileSize());
     }
 
-    public function testCorruptStoredThemeFallsBackToTheDefault(): void
+    public function testCorruptStoredSizeFallsBackToTheDefault(): void
     {
         $store = new InMemoryAppConfig();
-        $store->setAppValue('Theme', 'chartreuse');
+        $store->setAppValue('MaxSizeMb', 'chartreuse');
 
-        $this->assertSame('light', $this->config($store)->getTheme());
+        $this->assertSame(200 * 1024 * 1024, $this->config($store)->getMaxFileSize());
     }
 }

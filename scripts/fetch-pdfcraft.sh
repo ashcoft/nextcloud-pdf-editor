@@ -45,14 +45,31 @@ if [[ ! -f "${source}/index.html" ]]; then
     exit 1
 fi
 
-# Build the replacement beside the live bundle and swap it in only once it is
-# complete, so a failed download or unpack cannot leave the app without an
-# editor.
-staged="${work}/staged"
+# Stage beside the live bundle rather than under /tmp: the replacement below is
+# a rename, which is only atomic (and cheap) on one filesystem. A cross-device
+# `mv` would be a copy, and a failure partway through it could leave the app
+# without an editor.
+staged="${repo_root}/.pdfcraft-staged.$$"
+backup="${repo_root}/.pdfcraft-backup.$$"
+cleanup() { rm -rf "${staged}" "${backup}"; }
+trap 'cleanup' EXIT
+
+rm -rf "${staged}"
 mkdir -p "${staged}"
 cp -a "${source}/." "${staged}/"
 
-rm -rf "${dest}"
-mv "${staged}" "${dest}"
+# Swap: move the live bundle aside, move the new one in, then drop the old one.
+# If the second move fails, restore the backup so the app keeps its editor.
+if [[ -e "${dest}" ]]; then
+    mv "${dest}" "${backup}"
+fi
+if ! mv "${staged}" "${dest}"; then
+    echo "ERROR: could not install the new bundle; restoring the previous one" >&2
+    if [[ -e "${backup}" ]]; then
+        mv "${backup}" "${dest}"
+    fi
+    exit 1
+fi
+rm -rf "${backup}"
 
 echo "PdfCraft ${PDFCRAFT_VERSION} vendored into ${dest}"

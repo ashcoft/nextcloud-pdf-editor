@@ -101,6 +101,20 @@ class PdfCraftBundleServiceTest extends TestCase
         $this->service()->resolve('nope.js');
     }
 
+    public function testRefusesADirectoryLikePathWithATrailingSlash(): void
+    {
+        // `index.html/` must not quietly resolve to `index.html`: it would be
+        // served with immutable caching under a directory-like URL.
+        $this->expectException(NotFoundException::class);
+        $this->service()->resolve('index.html/');
+    }
+
+    public function testRefusesADoubledSlash(): void
+    {
+        $this->expectException(NotFoundException::class);
+        $this->service()->resolve('models//text-detection.onnx');
+    }
+
     public function testRefusesASymlinkThatLeavesTheBundle(): void
     {
         $outside = sys_get_temp_dir() . '/pdfcraft-outside-' . bin2hex(random_bytes(6));

@@ -55,7 +55,6 @@ class AdminSettingsController extends Controller
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function settings(): DataResponse
     {
-        $this->config->setTheme($this->stringParam('theme', $this->config->getTheme()));
         $this->config->setMaxFileSizeMb($this->stringParam(
             'maxSizeMb',
             (string) $this->maxSizeMb(),
@@ -65,12 +64,11 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * @return array{theme: string, maxSizeMb: int}
+     * @return array{maxSizeMb: int}
      */
     private function currentSettings(): array
     {
         return [
-            'theme' => $this->config->getTheme(),
             'maxSizeMb' => $this->maxSizeMb(),
         ];
     }

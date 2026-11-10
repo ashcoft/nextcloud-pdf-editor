@@ -14,6 +14,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\StreamResponse;
@@ -58,6 +59,21 @@ class PdfCraftController extends Controller
             return new DataResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
 
+        $cacheControl = $this->bundle->cacheControlFor($path);
+        $etag = $this->etagFor($absolute);
+
+        // The entry point and the OCR models keep their names across releases,
+        // so they revalidate rather than being cached indefinitely. Without a
+        // validator the browser re-downloads the ~12 MB of models on every
+        // visit; answering a matching If-None-Match with 304 lets it skip that.
+        if ($this->request->getHeader('If-None-Match') === $etag) {
+            $notModified = new DataResponse(null, Http::STATUS_NOT_MODIFIED);
+            $notModified->addHeader('ETag', $etag);
+            $notModified->addHeader('Cache-Control', $cacheControl);
+
+            return $notModified;
+        }
+
         $stream = fopen($absolute, 'rb');
         if ($stream === false) {
             return new DataResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
@@ -69,8 +85,67 @@ class PdfCraftController extends Controller
         // empty path would otherwise be served as octet-stream.
         $response->addHeader('Content-Type', $this->bundle->contentTypeFor($absolute));
         $response->addHeader('X-Content-Type-Options', 'nosniff');
-        $response->addHeader('Cache-Control', $this->bundle->cacheControlFor($path));
+        $response->addHeader('Cache-Control', $cacheControl);
+        $response->addHeader('ETag', $etag);
+
+        // The bundle's index.html boots the WASM module from an inline module
+        // script and its own hashed .js/.wasm files, and PdfCraft starts Web
+        // Workers for OCR. Nextcloud's default policy is `default-src 'none'`
+        // with a nonce-only script-src, which blocks both. The document is
+        // first-party (served from this app, no user data), so it is given a
+        // policy scoped to what it actually loads rather than the site default.
+        if (strtolower(pathinfo($absolute, PATHINFO_EXTENSION)) === 'html') {
+            $response->setContentSecurityPolicy($this->bundleContentSecurityPolicy());
+        }
 
         return $response;
+    }
+
+    /**
+     * CSP for the bundle's HTML document.
+     *
+     * `'unsafe-inline'` for scripts is required because the bootstrap is an
+     * inline `<script type="module">` in the generated `index.html`, which
+     * cannot carry a nonce (the file is vendored, not templated here).
+     * `worker-src 'self' blob:` allows the OCR workers, and `wasm-unsafe-eval`
+     * lets the module be compiled. Everything else stays at the default
+     * `default-src 'none'`, so the document can only load its own assets.
+     */
+    private function bundleContentSecurityPolicy(): ContentSecurityPolicy
+    {
+        $policy = new ContentSecurityPolicy();
+        $policy->addAllowedScriptDomain("'self'");
+        $policy->addAllowedScriptDomain("'unsafe-inline'");
+        $policy->addAllowedStyleDomain("'self'");
+        $policy->addAllowedStyleDomain("'unsafe-inline'");
+        $policy->addAllowedConnectDomain("'self'");
+        $policy->addAllowedImageDomain("'self'");
+        $policy->addAllowedImageDomain('data:');
+        $policy->addAllowedImageDomain('blob:');
+        $policy->addAllowedFontDomain("'self'");
+        $policy->addAllowedFontDomain('data:');
+        $policy->addAllowedWorkerSrcDomain("'self'");
+        $policy->addAllowedWorkerSrcDomain('blob:');
+        $policy->allowEvalWasm();
+        // The editor is embedded in the app's own page, so the document must
+        // allow being framed by this Nextcloud instance.
+        $policy->addAllowedFrameAncestorDomain("'self'");
+
+        return $policy;
+    }
+
+    /**
+     * A validator for a bundle file, derived from its size and mtime.
+     *
+     * The bundle is written once by `scripts/fetch-pdfcraft.sh` and replaced
+     * whole on an upgrade, so size and mtime change together with the content
+     * for a file that keeps its name.
+     */
+    private function etagFor(string $absolute): string
+    {
+        $size = @filesize($absolute);
+        $mtime = @filemtime($absolute);
+
+        return '"' . md5(($size === false ? 0 : $size) . '-' . ($mtime === false ? 0 : $mtime)) . '"';
     }
 }

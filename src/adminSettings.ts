@@ -24,10 +24,6 @@ export function initSettingsForm(): void {
 
   saveButton.addEventListener('click', async () => {
     const params = new URLSearchParams()
-    const theme = document.getElementById('pdf-editor-theme')
-    if (theme instanceof HTMLSelectElement) {
-      params.append('theme', theme.value)
-    }
     const maxSize = document.getElementById('pdf-editor-max-size')
     if (maxSize instanceof HTMLInputElement) {
       params.append('maxSizeMb', maxSize.value)

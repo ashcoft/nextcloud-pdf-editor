@@ -83,16 +83,21 @@ describe('PdfCraftBridge', () => {
   })
 
   it('opens a file as a transferred ArrayBuffer without detaching the caller array', () => {
-    const { frame, stubWindow, sent } = makeFrame()
+    const { frame, stubWindow } = makeFrame()
     const bridge = new PdfCraftBridge(frame, { onSave: jest.fn() })
 
     const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
     bridge.open('report.pdf', bytes)
 
-    expect(sent).toHaveLength(1)
-    expect(sent[0]!.type).toBe('pdfcraft:open')
-    expect(sent[0]!.name).toBe('report.pdf')
-    expect(sent[0]!.bytes).toBeInstanceOf(ArrayBuffer)
+    // Assert the outbound contract: the message shape, the target origin and
+    // the transfer list. A regression in either the origin or the transfer
+    // would otherwise pass unnoticed.
+    expect(stubWindow.postMessage).toHaveBeenCalledTimes(1)
+    const [message, targetOrigin, transfer] = stubWindow.postMessage.mock.calls[0]!
+    expect(message).toMatchObject({ type: 'pdfcraft:open', name: 'report.pdf' })
+    expect(targetOrigin).toBe(window.location.origin)
+    expect(transfer).toHaveLength(1)
+    expect(transfer[0]).toBeInstanceOf(ArrayBuffer)
     // The caller's array must still be usable: the bridge copies before the
     // transfer, so a second open with the same array works.
     expect(Array.from(bytes)).toEqual([0x25, 0x50, 0x44, 0x46])

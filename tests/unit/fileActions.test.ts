@@ -31,8 +31,15 @@ describe('isPdfNode', () => {
     expect(isPdfNode(node({ mime: 'text/plain', basename: 'notes.txt' }))).toBe(false)
   })
 
-  it('falls back to the extension when the mime is generic', () => {
+  it('falls back to the extension only when the mime is generic', () => {
     expect(isPdfNode(node({ mime: 'application/octet-stream', basename: 'x.pdf' }))).toBe(true)
+    expect(isPdfNode(node({ mime: '', basename: 'x.pdf' }))).toBe(true)
+  })
+
+  it('rejects a non-PDF mime even when the name ends in .pdf', () => {
+    // A PNG named `.pdf`: the MIME identifies the real format, and the backend
+    // refuses the same file, so the action must not be offered for it.
+    expect(isPdfNode(node({ mime: 'image/png', basename: 'art.pdf' }))).toBe(false)
   })
 
   it('prefers the mime type when the name disagrees', () => {

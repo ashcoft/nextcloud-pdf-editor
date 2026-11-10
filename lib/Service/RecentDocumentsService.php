@@ -63,29 +63,36 @@ class RecentDocumentsService
         $results = [];
         $seen = [];
 
-        try {
-            $nodes = $folder->searchByMime('application');
-        } catch (\Throwable $e) {
-            $this->logger->warning('PDF Editor: could not list documents', [
-                'exception' => $e,
-            ]);
-            return [];
-        }
-
-        foreach ($nodes as $node) {
-            if (!$node instanceof File) {
+        // Search the PDF MIME types directly rather than every `application/*`
+        // file: on a large tree the broad search loads and walks many unrelated
+        // files just to keep 24. The alias types are included because a file
+        // can carry one until it is re-scanned.
+        foreach (Application::PDF_MIME_TYPES as $mimeType) {
+            try {
+                $nodes = $folder->searchByMime($mimeType);
+            } catch (\Throwable $e) {
+                $this->logger->warning('PDF Editor: could not list documents', [
+                    'mimeType' => $mimeType,
+                    'exception' => $e,
+                ]);
                 continue;
             }
 
-            $id = (int) $node->getId();
-            if (isset($seen[$id])) {
-                continue;
-            }
-            $seen[$id] = true;
+            foreach ($nodes as $node) {
+                if (!$node instanceof File) {
+                    continue;
+                }
 
-            $entry = $this->describe($node, $folder);
-            if ($entry !== null) {
-                $results[] = $entry;
+                $id = (int) $node->getId();
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+
+                $entry = $this->describe($node, $folder);
+                if ($entry !== null) {
+                    $results[] = $entry;
+                }
             }
         }
 
@@ -97,7 +104,7 @@ class RecentDocumentsService
      */
     private function describe(File $file, Folder $root): ?array
     {
-        if (!Application::isSupportedFile($file->getName())) {
+        if (!Application::isSupportedFile($file->getName(), $file->getMimeType())) {
             return null;
         }
 

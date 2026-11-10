@@ -15,12 +15,22 @@ export const PDF_EDITOR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox=
 </svg>`
 
 /**
+ * MIME types that carry no useful format information.
+ *
+ * A file Nextcloud has not scanned yet, or one whose mapping is stale, reports
+ * one of these; only then is the extension allowed to decide. This mirrors
+ * `Application::GENERIC_MIME_TYPES` on the backend.
+ */
+const GENERIC_MIME_TYPES = ['', 'application/octet-stream']
+
+/**
  * Whether a node is a PDF document the editor can open.
  *
- * One rule decides, so a file whose name and MIME disagree - `application/pdf`
- * named `notes.txt` - is judged once: the MIME type is authoritative when it
- * identifies a PDF, and the extension is consulted only when the MIME says
- * nothing useful (Nextcloud had not resolved it after an upload, for example).
+ * The MIME type is authoritative when it identifies a PDF. The extension is
+ * consulted only when the MIME carries no format information, so a PNG named
+ * `art.pdf` is not offered as a PDF (the backend would refuse it). This is the
+ * same rule `Application::isSupportedFile` applies, so the action and the API
+ * agree on what opens.
  *
  * Only files are considered, so a folder named `archive.pdf` never matches.
  */
@@ -33,7 +43,7 @@ export function isPdfNode(node: Pick<INode, 'type' | 'mime' | 'basename'>): bool
     return true
   }
 
-  return isPdfExtension(node.basename)
+  return GENERIC_MIME_TYPES.includes(node.mime) && isPdfExtension(node.basename)
 }
 
 /**

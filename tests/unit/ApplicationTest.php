@@ -39,8 +39,27 @@ class ApplicationTest extends TestCase
 
     public function testIsSupportedFileCoversPdf(): void
     {
-        $this->assertTrue(Application::isSupportedFile('report.pdf'));
-        $this->assertFalse(Application::isSupportedFile('movie.mp4'));
+        $this->assertTrue(Application::isSupportedFile('report.pdf', 'application/pdf'));
+        $this->assertFalse(Application::isSupportedFile('movie.mp4', 'video/mp4'));
+    }
+
+    public function testIsSupportedFileAcceptsAPdfByMimeWithoutTheExtension(): void
+    {
+        // A PDF whose name lost its extension still opens: the MIME decides.
+        $this->assertTrue(Application::isSupportedFile('report', 'application/pdf'));
+        $this->assertTrue(Application::isSupportedFile('report', 'application/x-pdf'));
+    }
+
+    public function testIsSupportedFileUsesTheExtensionOnlyWhenTheMimeIsGeneric(): void
+    {
+        // Nextcloud has not resolved the type yet.
+        $this->assertTrue(Application::isSupportedFile('report.pdf', 'application/octet-stream'));
+        $this->assertTrue(Application::isSupportedFile('report.pdf', ''));
+
+        // A PNG named `.pdf` is refused: the MIME identifies the real format,
+        // so the action and the API both decline it.
+        $this->assertFalse(Application::isSupportedFile('art.pdf', 'image/png'));
+        $this->assertFalse(Application::isSupportedFile('notes.txt', 'text/plain'));
     }
 
     public function testMaxFileSizeIsBelowTheHostOpenLimit(): void

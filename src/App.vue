@@ -1,5 +1,5 @@
 <template>
-  <div id="pdf-editor-wrapper" class="pdf-editor-wrapper" :class="`pdf-editor-wrapper--${theme}`">
+  <div id="pdf-editor-wrapper" class="pdf-editor-wrapper">
     <header class="pdf-editor-toolbar">
       <div class="pdf-editor-toolbar__group">
         <span class="pdf-editor-toolbar__file">{{ fileName }}</span>
@@ -57,7 +57,6 @@ import { generateUrl } from '@nextcloud/router'
 import { PdfCraftBridge, type BridgeOutput } from './editor/pdfcraftBridge'
 import { fetchFile } from './utils/fetchFile'
 import { saveFile } from './utils/saveFile'
-import { toDataUrl } from './utils/dataUrl'
 
 const appTranslation = (text: string): string => translate('pdf_editor', text)
 
@@ -80,11 +79,16 @@ export default defineComponent({
     const dirty = ref(false)
     const canSave = ref(false)
     const fileName = ref('')
-    const theme = ref<'light' | 'dark'>('light')
 
     let etag = ''
     let fileId: number | null = null
     let bridge: PdfCraftBridge | null = null
+    /**
+     * Bumped on every save. A save that finishes after a newer edit arrived
+     * must not clear the dirty flag for that newer edit, so the flag is only
+     * cleared when the save is still the latest one.
+     */
+    let saveGeneration = 0
 
     // The bundle is served by the app, so the frame stays same-origin and the
     // bridge can talk to it with postMessage. `?host=parent` switches PdfCraft
@@ -104,16 +108,30 @@ export default defineComponent({
       if (fileId === null) {
         return false
       }
+
+      // Save As asks for a new destination, which this app does not provide:
+      // the editor is opened on one file and the backend writes that file.
+      // Writing the bytes to the opened file instead would silently overwrite
+      // the original, so the save is refused and the user keeps their document.
+      if (output.saveAs) {
+        statusMessage.value = appTranslation(
+          'Save As is not supported here. Use Save to write the opened file, or the editor’s export.',
+        )
+        return false
+      }
+
       if (!canSave.value) {
         statusMessage.value = appTranslation('This file cannot be saved.')
         return false
       }
 
+      const generation = ++saveGeneration
       saving.value = true
       statusMessage.value = appTranslation('Saving…')
 
       try {
-        const result = await saveFile(fileId, etag, toDataUrl(output.bytes))
+        const dataUrl = await toPdfDataUrl(output.bytes)
+        const result = await saveFile(fileId, etag, dataUrl)
 
         if (!result.ok) {
           statusMessage.value = result.error ?? appTranslation('Could not save the file.')
@@ -121,7 +139,11 @@ export default defineComponent({
         }
 
         etag = result.etag ?? etag
-        dirty.value = false
+        // Only clear the flag when this is still the newest save: an edit made
+        // while it was in flight leaves the document dirty.
+        if (generation === saveGeneration) {
+          dirty.value = false
+        }
         statusMessage.value = appTranslation('Saved.')
         return true
       } catch {
@@ -142,7 +164,13 @@ export default defineComponent({
      */
     async function start(): Promise<void> {
       const frame = frameElement.value
-      if (frame === null || props.fileId === null || bridge !== null) {
+      if (frame === null || bridge !== null) {
+        return
+      }
+
+      if (props.fileId === null) {
+        status.value = 'error'
+        errorMessage.value = appTranslation('No file was given to open.')
         return
       }
 
@@ -153,6 +181,10 @@ export default defineComponent({
             dirty.value = value
           },
           onFailed: (error) => {
+            // The editor reported a failure (it could not start, take the
+            // document, or confirm a save). Surface it instead of leaving the
+            // loading screen up until the bridge times out.
+            status.value = 'error'
             errorMessage.value = error
           },
         })
@@ -170,7 +202,6 @@ export default defineComponent({
         etag = result.meta.etag
         canSave.value = result.meta.canSave
         fileName.value = result.meta.name
-        theme.value = result.meta.theme
 
         bridge.open(result.meta.name, result.bytes)
         status.value = 'ready'
@@ -219,11 +250,32 @@ export default defineComponent({
       saving,
       dirty,
       fileName,
-      theme,
       exitEditor,
     }
   },
 })
+
+/**
+ * Read bytes as a `data:application/pdf;base64,…` URL.
+ *
+ * `FileReader.readAsDataURL` does the base64 in the browser without building a
+ * giant intermediate string, which a hand-rolled encoder would have to for a
+ * multi-megabyte document.
+ */
+function toPdfDataUrl(bytes: Uint8Array): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result
+      // FileReader reports the type from the Blob, which is set here.
+      resolve(typeof result === 'string' ? result : '')
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the document.'))
+    // `bytes` is copied into a fresh ArrayBuffer so the Blob part is a plain
+    // ArrayBuffer rather than a possibly-shared view.
+    reader.readAsDataURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }))
+  })
+}
 </script>
 
 <style scoped>

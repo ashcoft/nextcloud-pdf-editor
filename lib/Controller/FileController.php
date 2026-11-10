@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\PdfEditor\Controller;
 
 use OCA\PdfEditor\Config\AppConfig;
+use OCA\PdfEditor\Exception\NoUserSessionException;
 use OCA\PdfEditor\Service\FileService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -39,7 +40,6 @@ class FileController extends Controller
         private readonly AppConfig $appConfig,
         private readonly IURLGenerator $urlGenerator,
         private readonly LoggerInterface $logger,
-        private readonly ILockingProvider $lockingProvider,
     ) {
         parent::__construct($appName, $request);
     }
@@ -56,11 +56,10 @@ class FileController extends Controller
             return new DataResponse(['error' => self::ERR_ACCESS_DENIED], Http::STATUS_FORBIDDEN);
         }
 
-        // The extension decides, not the MIME type: a PDF that Nextcloud has
-        // not yet resolved still has to open, and a file renamed to .pdf but
-        // holding something else is refused here rather than handed to the
-        // editor as a document it cannot read.
-        if (!\OCA\PdfEditor\AppInfo\Application::isSupportedFile($file->getName())) {
+        // The MIME type decides when it identifies a PDF, and the extension is
+        // the fallback for a file Nextcloud has not resolved. The same rule the
+        // Files action uses, so the two never disagree about what opens.
+        if (!\OCA\PdfEditor\AppInfo\Application::isSupportedFile($file->getName(), $file->getMimeType())) {
             $this->logger->info('PDF Editor: refusing unsupported file type', [
                 'fileId' => $fileId,
                 'name' => $file->getName(),
@@ -102,7 +101,7 @@ class FileController extends Controller
             return new DataResponse(['error' => self::ERR_ACCESS_DENIED], Http::STATUS_FORBIDDEN);
         }
 
-        if ($e instanceof \RuntimeException) {
+        if ($e instanceof NoUserSessionException) {
             $this->logger->warning('PDF Editor: unauthorized access attempt');
             return new DataResponse(['error' => 'Unauthorized'], Http::STATUS_UNAUTHORIZED);
         }
@@ -144,7 +143,6 @@ class FileController extends Controller
                 ['fileId' => $fileId],
             );
             $meta['contentType'] = 'application/pdf';
-            $meta['theme'] = $this->appConfig->getTheme();
             $meta['maxFileSize'] = $this->appConfig->getMaxFileSize();
 
             $this->logger->info('PDF Editor: loading file', [
@@ -190,10 +188,7 @@ class FileController extends Controller
             $response->addHeader('Content-Type', 'application/pdf');
             $response->addHeader('Content-Length', (string) $file->getSize());
             $response->addHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            $response->addHeader(
-                'Content-Disposition',
-                'attachment; filename="' . addslashes($file->getName()) . '"',
-            );
+            $response->addHeader('Content-Disposition', $this->contentDisposition($file->getName()));
 
             return $response;
         } catch (\Throwable $e) {
@@ -260,7 +255,7 @@ class FileController extends Controller
                 return new DataResponse(['error' => 'Missing file version'], Http::STATUS_BAD_REQUEST);
             }
 
-            return $this->writeWithLock($file, $fileId, $binary, $etag);
+            return $this->writeWithLock($fileId, $binary, $etag);
         } catch (\Throwable $e) {
             return $this->handleError($e, $fileId);
         }
@@ -269,24 +264,31 @@ class FileController extends Controller
     /**
      * Write the new content while holding an exclusive lock on the file.
      *
+     * The lock goes through `Node::lock()`, which resolves the storage's own
+     * lock key (`files/<md5(storageId::path)>`), the same key the Files app and
+     * every other writer use. A hand-built key would not match, so a
+     * concurrent write could slip through between the etag check and the write
+     * despite the advertised lock.
+     *
      * The version is re-checked *inside* the lock, so two saves based on the
      * same etag cannot both pass and the later one silently discard the first
      * edit: the second sees the new etag and is refused with 409.
      */
-    private function writeWithLock(File $file, int $fileId, string $binary, string $etag): DataResponse
+    private function writeWithLock(int $fileId, string $binary, string $etag): DataResponse
     {
-        $lockPath = $file->getStorage()->getId() . '::' . $file->getInternalPath();
+        $file = null;
         $locked = false;
 
         try {
-            $this->lockingProvider->acquireLock($lockPath, ILockingProvider::LOCK_EXCLUSIVE);
+            // Re-resolve immediately before locking, and lock the node that is
+            // resolved, so a move between the caller's resolve and here cannot
+            // lock one path while the write lands on another.
+            $file = $this->fileService->resolveFile($fileId);
+            $file->lock(ILockingProvider::LOCK_EXCLUSIVE);
             $locked = true;
 
-            // Re-resolve inside the lock so the etag is the current one. A
-            // lock is advisory, so the check must read the file again rather
-            // than trust a FileInfo from before the lock.
-            $file = $this->fileService->resolveFile($fileId);
-
+            // The lock is advisory, so the etag is read again now that it is
+            // held rather than trusting the value from before the lock.
             if ($etag !== $file->getEtag()) {
                 $this->logger->info('PDF Editor: refusing save, file changed', ['fileId' => $fileId]);
                 return new DataResponse(
@@ -313,9 +315,9 @@ class FileController extends Controller
         } catch (NotPermittedException) {
             return new DataResponse(['error' => self::ERR_ACCESS_DENIED], Http::STATUS_FORBIDDEN);
         } finally {
-            if ($locked) {
+            if ($locked && $file !== null) {
                 try {
-                    $this->lockingProvider->releaseLock($lockPath, ILockingProvider::LOCK_EXCLUSIVE);
+                    $file->unlock(ILockingProvider::LOCK_EXCLUSIVE);
                 } catch (\Throwable $e) {
                     $this->logger->warning('PDF Editor: failed to release save lock', [
                         'fileId' => $fileId,
@@ -324,6 +326,28 @@ class FileController extends Controller
                 }
             }
         }
+    }
+
+    /**
+     * Build a `Content-Disposition` value for a file name.
+     *
+     * The name is user-controlled, so control characters (notably CR and LF,
+     * which would let a crafted name inject a header) are dropped, and the
+     * value is emitted as an RFC 5987 `filename*` with a quoted ASCII fallback,
+     * so a name outside ASCII still round-trips.
+     */
+    private function contentDisposition(string $fileName): string
+    {
+        // Strip anything outside printable ASCII for the quoted fallback, and
+        // percent-encode the full name for `filename*`.
+        $ascii = preg_replace('/[^\x20-\x7e]/', '_', $fileName) ?? 'document.pdf';
+        $ascii = str_replace(['"', '\\'], '_', $ascii);
+
+        return sprintf(
+            "attachment; filename=\"%s\"; filename*=UTF-8''%s",
+            $ascii,
+            rawurlencode($fileName),
+        );
     }
 
     /**

@@ -17,7 +17,7 @@ return [
         // Serve the vendored PdfCraft web build. The path requirement allows
         // slashes and may be empty, so the bundle's relative subresource URLs
         // and a bare request for the editor both resolve here.
-        ['name' => 'pdfcraft#asset', 'url' => '/pdfcraft/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.*'], 'defaults' => ['path' => '']],
+        ['name' => 'PdfCraft#asset', 'url' => '/pdfcraft/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.*'], 'defaults' => ['path' => '']],
         // Admin settings endpoint
         ['name' => 'AdminSettings#index', 'url' => '/settings/admin', 'verb' => 'GET'],
         ['name' => 'AdminSettings#settings', 'url' => '/settings/save', 'verb' => 'POST'],

@@ -5,27 +5,6 @@
     <h2>PDF Editor</h2>
 
     <div class="pdf-editor-setting">
-        <label for="pdf-editor-theme"><?php p($l->t('Theme:')) ?></label>
-        <select id="pdf-editor-theme">
-            <option
-                value="light"
-                <?php if ($_['theme'] === 'light') {
-                    echo ' selected';
-                } ?>
-            ><?php p($l->t('Light')) ?></option>
-            <option
-                value="dark"
-                <?php if ($_['theme'] === 'dark') {
-                    echo ' selected';
-                } ?>
-            ><?php p($l->t('Dark')) ?></option>
-        </select>
-        <p class="pdf-editor-hint">
-            <?php p($l->t('Note: The theme used when a document is opened in the editor.')) ?>
-        </p>
-    </div>
-
-    <div class="pdf-editor-setting">
         <label for="pdf-editor-max-size"><?php p($l->t('Maximum file size (MB):')) ?></label>
         <input
             id="pdf-editor-max-size"

@@ -75,6 +75,7 @@ run_bump() {
 }
 
 read_pin() { sed -n 's/^PDFCRAFT_VERSION="\([^"]*\)"/\1/p' "${work}/fetcher.sh" | head -1; }
+read_sum() { sed -n 's/^PDFCRAFT_SHA256="\([^"]*\)"/\1/p' "${work}/fetcher.sh" | head -1; }
 
 # 1. A version that is not strict semver is rejected before anything is written.
 for bad in "1.2" "abc" "1.2.3; rm -rf /" '$(id)' '1.2.3 "x"; whoami'; do
@@ -100,11 +101,21 @@ fi
 seed_fetcher
 newsum="$(printf 'b%.0s' {1..64})"
 code="$(FAKE_TAG=0.30.0 FAKE_SUM="${newsum}" run_bump 0.30.0)"
-sum="$(sed -n 's/^PDFCRAFT_SHA256="\([^"]*\)"/\1/p' "${work}/fetcher.sh" | head -1)"
+sum="$(read_sum)"
 if [[ "${code}" == "0" && "$(read_pin)" == "0.30.0" && "${sum}" == "${newsum}" ]]; then
     pass "rewrites version and checksum on a valid update"
 else
     fail "expected pin 0.30.0 with the new checksum (exit ${code}, pin $(read_pin))"
+fi
+
+# 3b. With no argument the script resolves the latest release and pins it.
+seed_fetcher
+latestsum="$(printf 'd%.0s' {1..64})"
+code="$(FAKE_TAG=0.40.0 FAKE_SUM="${latestsum}" run_bump)"
+if [[ "${code}" == "0" && "$(read_pin)" == "0.40.0" && "$(read_sum)" == "${latestsum}" ]]; then
+    pass "resolves and pins the latest release when given no version"
+else
+    fail "expected the latest release 0.40.0 to be pinned (exit ${code}, pin $(read_pin))"
 fi
 
 # 4. A malformed checksum is rejected and the pin is left alone.
@@ -116,14 +127,16 @@ else
     fail "malformed checksum was accepted (exit ${code}, pin $(read_pin))"
 fi
 
-# 5. A failed fetch restores the previous pin so a retry is not skipped.
+# 5. A failed fetch restores the previous pin and checksum so a retry is not
+# skipped and the pin cannot point at a version the bundle does not hold.
 mk_failing_fetcher
+origsum="$(read_sum)"
 goodsum="$(printf 'c%.0s' {1..64})"
 code="$(FAKE_TAG=0.32.0 FAKE_SUM="${goodsum}" run_bump 0.32.0)"
-if [[ "${code}" != "0" && "$(read_pin)" == "0.20.0" ]]; then
-    pass "restores the previous pin when the fetch fails"
+if [[ "${code}" != "0" && "$(read_pin)" == "0.20.0" && "$(read_sum)" == "${origsum}" ]]; then
+    pass "restores the previous pin and checksum when the fetch fails"
 else
-    fail "pin not restored after a failed fetch (exit ${code}, pin $(read_pin))"
+    fail "pin not fully restored after a failed fetch (exit ${code}, pin $(read_pin), sum $(read_sum))"
 fi
 
 echo

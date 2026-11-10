@@ -37,9 +37,11 @@ latest_release() {
 
 release_checksum() {
     local version="$1" sum
+    # `grep -F`: the version can carry `+` build metadata, which a regular
+    # expression would treat as a quantifier and fail to match.
     sum="$(curl -fsSL --proto '=https' --tlsv1.2 \
         "https://github.com/${upstream}/releases/download/v${version}/SHA256SUMS.txt" \
-        | grep -E "[[:space:]]pdfcraft-web-${version}\.zip\$" | head -1 | awk '{print $1}')" || true
+        | grep -F "pdfcraft-web-${version}.zip" | head -1 | awk '{print $1}')" || true
     printf '%s' "${sum}"
 }
 

@@ -96,7 +96,7 @@ stage: build
 appstore: stage
 	cd $(build_dir) && tar -czf $(app_id).tar.gz --owner=www-data --group=www-data $(app_id)
 	@if command -v zip >/dev/null 2>&1; then \
-		cd $(build_dir) && zip -r $(app_id).zip $(app_id); \
+		cd $(build_dir) && rm -f $(app_id).zip && zip -r $(app_id).zip $(app_id); \
 	else \
 		echo "Warning: zip not installed, skipping zip archive"; \
 	fi

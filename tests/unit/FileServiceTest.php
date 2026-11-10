@@ -21,7 +21,6 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Test suite for file resolution and description.
@@ -72,7 +71,7 @@ class FileServiceTest extends TestCase
         return new FileService(
             $rootFolder,
             $session,
-            new AppConfig($store ?? new InMemoryAppConfig(), $this->createMock(LoggerInterface::class)),
+            new AppConfig($store ?? new InMemoryAppConfig()),
         );
     }
 

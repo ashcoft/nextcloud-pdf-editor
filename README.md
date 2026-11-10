@@ -48,7 +48,7 @@ Everything PdfCraft offers, in the browser:
   overwrite someone else's work
 - The toolbar shows the document name and a dirty marker, and warns before leaving with unsaved changes
 - Start page with recent PDFs and a shortcut to the Files app
-- Admin settings for the theme and the maximum file size
+- Admin setting for the maximum file size
 
 ## Architecture
 
@@ -154,7 +154,6 @@ Settings live under **Administration settings → PDF Editor**.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Theme | Light | Theme the editor opens with |
 | Maximum file size (MB) | 200 | Largest file the editor will open, 1–512 |
 
 ## Development
