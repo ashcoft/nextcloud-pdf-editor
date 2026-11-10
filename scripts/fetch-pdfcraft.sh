@@ -17,7 +17,15 @@ dest="${repo_root}/pdfcraft"
 url="https://github.com/storytold/pdfcraft/releases/download/v${PDFCRAFT_VERSION}/pdfcraft-web-${PDFCRAFT_VERSION}.zip"
 
 work="$(mktemp -d)"
-trap 'rm -rf "${work}"' EXIT
+# The staging paths live beside the live bundle rather than under /tmp: the
+# replacement below is a rename, which is only atomic (and cheap) on one
+# filesystem. A cross-device `mv` would be a copy, and a failure partway
+# through it could leave the app without an editor. One EXIT trap removes the
+# work directory and both staging paths, so no exit path leaks them.
+staged="${repo_root}/.pdfcraft-staged.$$"
+backup="${repo_root}/.pdfcraft-backup.$$"
+cleanup() { rm -rf "${work}" "${staged}" "${backup}"; }
+trap 'cleanup' EXIT
 
 echo "Downloading ${url}"
 # Pin the protocol so a redirect cannot downgrade the download to plain HTTP.
@@ -45,15 +53,7 @@ if [[ ! -f "${source}/index.html" ]]; then
     exit 1
 fi
 
-# Stage beside the live bundle rather than under /tmp: the replacement below is
-# a rename, which is only atomic (and cheap) on one filesystem. A cross-device
-# `mv` would be a copy, and a failure partway through it could leave the app
-# without an editor.
-staged="${repo_root}/.pdfcraft-staged.$$"
-backup="${repo_root}/.pdfcraft-backup.$$"
-cleanup() { rm -rf "${staged}" "${backup}"; }
-trap 'cleanup' EXIT
-
+# Stage beside the live bundle and swap it in with renames.
 rm -rf "${staged}"
 mkdir -p "${staged}"
 cp -a "${source}/." "${staged}/"

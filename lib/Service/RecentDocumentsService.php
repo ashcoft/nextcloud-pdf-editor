@@ -65,9 +65,13 @@ class RecentDocumentsService
 
         // Search the PDF MIME types directly rather than every `application/*`
         // file: on a large tree the broad search loads and walks many unrelated
-        // files just to keep 24. The alias types are included because a file
-        // can carry one until it is re-scanned.
-        foreach (Application::PDF_MIME_TYPES as $mimeType) {
+        // files just to keep 24. `application/octet-stream` is included too,
+        // because a PDF that Nextcloud has not scanned yet is recorded under it
+        // and would otherwise drop out of the list; `describe()` then confirms
+        // it by name.
+        $mimeTypes = [...Application::PDF_MIME_TYPES, 'application/octet-stream'];
+
+        foreach ($mimeTypes as $mimeType) {
             try {
                 $nodes = $folder->searchByMime($mimeType);
             } catch (\Throwable $e) {
