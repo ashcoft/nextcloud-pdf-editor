@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+  <id>pdf_editor</id>
+  <name>PDF Editor</name>
+  <summary>Read and edit PDF files in Nextcloud</summary>
+  <description><![CDATA[A native Nextcloud app for reading, organising and editing PDF documents, built on [PdfCraft](https://github.com/storytold/pdfcraft) - an open-source PDF workbench written from scratch in Rust.
+
+**Supported format:** PDF
+
+**Features:**
+- Read a PDF in a fast, native-feeling viewer
+- Reorder, rotate, insert, delete and extract pages
+- Combine several PDFs into one, and split one into several
+- Add, edit and remove text, shapes and images
+- Annotate and comment, and fill in forms
+- Sign, redact and protect a document
+- Recognise text (OCR) in a scan
+- Save your changes straight back to the file
+- Start page with your recent PDFs and a shortcut to open the Files app
+- Admin setting for the maximum file size
+- Dark and light themes, plus fullscreen mode
+- Responsive design that works on desktop and mobile
+
+All rendering happens in the browser; the file never leaves the Nextcloud server except as the bytes the browser already has permission to read. See the [project README](https://github.com/ashcoft/nextcloud-pdf-editor#readme) for requirements, installation and usage.]]></description>
+  <version>1.0.0</version>
+  <licence>MIT</licence>
+  <author mail="dony@dony.me">PDF Editor Contributors</author>
+  <namespace>PdfEditor</namespace>
+  <types>
+    <filesystem/>
+  </types>
+  <documentation>
+    <user>https://github.com/ashcoft/nextcloud-pdf-editor</user>
+    <admin>https://github.com/ashcoft/nextcloud-pdf-editor</admin>
+    <developer>https://github.com/ashcoft/nextcloud-pdf-editor</developer>
+  </documentation>
+  <category>files</category>
+  <website>https://github.com/ashcoft/nextcloud-pdf-editor</website>
+  <discussion>https://github.com/ashcoft/nextcloud-pdf-editor/discussions</discussion>
+  <bugs>https://github.com/ashcoft/nextcloud-pdf-editor/issues</bugs>
+  <repository type="git">https://github.com/ashcoft/nextcloud-pdf-editor.git</repository>
+  <dependencies>
+    <php min-version="8.4"/>
+    <nextcloud min-version="34" max-version="35"/>
+  </dependencies>
+  <settings>
+    <admin>OCA\PdfEditor\Settings\AdminSettings</admin>
+    <admin-section>OCA\PdfEditor\Settings\AdminSection</admin-section>
+  </settings>
+  <navigations>
+    <navigation>
+      <id>pdf_editor</id>
+      <name>PDF Editor</name>
+      <route>pdf_editor.view.index</route>
+      <type>link</type>
+    </navigation>
+  </navigations>
+</info>

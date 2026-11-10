@@ -1,0 +1,27 @@
+/**
+ * SPDX-FileCopyrightText: 2026 PDF Editor Contributors
+ * SPDX-License-Identifier: MIT
+ */
+
+/**
+ * The metadata the server returns for a document the editor is about to open.
+ */
+export interface LoadResponse {
+  id: number
+  name: string
+  size: number
+  mimeType: string
+  path: string
+  /** User-visible folder the file lives in, for "back to Files" links. */
+  directory: string
+  /** Version of the file the metadata was read from. */
+  etag: string
+  /** Whether the document can be written back. */
+  canSave: boolean
+  /** Direct download URL for the file. */
+  url: string
+  contentType: string
+  /** Largest payload the server will accept, in bytes. */
+  maxFileSize: number
+  error?: string
+}
