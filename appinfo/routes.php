@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'routes' => [
+        ['name' => 'view#index', 'url' => '/', 'verb' => 'GET'],
+        ['name' => 'view#view', 'url' => '/view', 'verb' => 'GET'],
+        // Metadata endpoint - returns file info + secure download URL
+        ['name' => 'file#load', 'url' => '/api/load/{fileId}', 'verb' => 'GET'],
+        // Download endpoint - streams file directly (session-authenticated)
+        ['name' => 'file#download', 'url' => '/api/download/{fileId}', 'verb' => 'GET'],
+        // File metadata endpoint
+        ['name' => 'file#getFile', 'url' => '/api/file/{fileId}', 'verb' => 'GET'],
+        // Save edited PDF content back to a file
+        ['name' => 'file#save', 'url' => '/api/save/{fileId}', 'verb' => 'POST'],
+        // Serve the vendored PdfCraft web build. The path requirement allows
+        // slashes and may be empty, so the bundle's relative subresource URLs
+        // and a bare request for the editor both resolve here.
+        ['name' => 'pdfcraft#asset', 'url' => '/pdfcraft/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.*'], 'defaults' => ['path' => '']],
+        // Admin settings endpoint
+        ['name' => 'AdminSettings#index', 'url' => '/settings/admin', 'verb' => 'GET'],
+        ['name' => 'AdminSettings#settings', 'url' => '/settings/save', 'verb' => 'POST'],
+    ],
+];

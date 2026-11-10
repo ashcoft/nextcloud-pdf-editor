@@ -1,0 +1,29 @@
+/* SPDX-FileCopyrightText: 2026 PDF Editor Contributors
+ * SPDX-License-Identifier: MIT
+ */
+
+.section-pdf-editor .pdf-editor-setting {
+        margin-bottom: 1rem;
+}
+
+.section-pdf-editor .pdf-editor-setting label {
+        display: inline-block;
+        min-width: 12rem;
+        margin-right: 0.5rem;
+        vertical-align: middle;
+}
+
+.section-pdf-editor .pdf-editor-setting input[type='number'] {
+        width: 6rem;
+}
+
+.section-pdf-editor .pdf-editor-hint {
+        margin: 0.25rem 0 0;
+        color: var(--color-text-maxcontrast);
+        font-size: 0.875rem;
+}
+
+.section-pdf-editor .pdf-editor-status {
+        margin-left: 0.75rem;
+        font-size: 0.875rem;
+}
