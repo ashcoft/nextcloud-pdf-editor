@@ -14,7 +14,10 @@
         flex-direction: column;
         width: 100%;
         height: calc(100vh - var(--header-height, 50px));
-        min-height: 20rem;
+
+        /* A floor so the editor is usable on a very short viewport, but one
+           that yields to the viewport calculation rather than overflowing it. */
+        min-height: min(20rem, calc(100vh - var(--header-height, 50px)));
         margin: 0;
         padding: 0;
         background: var(--color-main-background);

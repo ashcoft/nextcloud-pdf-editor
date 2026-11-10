@@ -5,7 +5,7 @@ const coreRules = require('@commitlint/rules').default
  * `header-max-length` are relaxed for the updater's commits only; every other rule
  * still applies, so a bump commit malformed in any other way is still rejected.
  */
-const BOT_COMMIT = /^chore\((deps|actions)\): Bump /;
+const BOT_COMMIT = /^chore\((deps|dev-deps|actions)\): Bump /;
 
 const relaxedForBots = (rule) => (parsed, when, value) =>
   BOT_COMMIT.test(parsed.header || '') ? [true] : rule(parsed, when, value);

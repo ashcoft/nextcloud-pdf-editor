@@ -75,8 +75,12 @@ describe('dependency security overrides', () => {
     const mapping = overrides.match(/minimatch@<[\d.]+:\s*(\S+)/)
     expect(mapping).not.toBeNull()
     const target = mapping![1]
-    const floor = target.match(/\d+\.\d+\.\d+/)?.[0]
-    expect(floor).toBeDefined()
-    expect(isBelow(floor!, MINIMATCH_FIRST_PATCHED)).toBe(false)
+    // Check every version in the target, not just the first: a target such as
+    // `^11.0.1 || ^9.0.9` would pass a first-version check while still
+    // permitting the vulnerable range.
+    const versions = target.match(/\d+\.\d+\.\d+/g) ?? []
+    expect(versions.length).toBeGreaterThan(0)
+    const vulnerable = versions.filter(v => isBelow(v, MINIMATCH_FIRST_PATCHED))
+    expect(vulnerable).toEqual([])
   })
 })

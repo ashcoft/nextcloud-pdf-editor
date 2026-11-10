@@ -19,8 +19,10 @@ const workflow = fs.readFileSync(WORKFLOW, 'utf8')
 // rewrites the tracked vendor-bin/nextcloud-ocp/composer.json and .lock, which
 // the create-pull-request step then commits. Neither belongs in this workflow.
 const COMPOSER_BIN = /composer\s+bin\b/
-const COMPOSER_INSTALL = /composer\s+(i|install)\b/
-const RECTOR = /composer\s+run\s+rector\b/
+// Anchored to `run:` lines so a comment or unrelated field cannot satisfy the
+// ordering check for a workflow that has no dependency-install step.
+const COMPOSER_INSTALL = /^\s*run:\s*composer\s+(i|install)\b/m
+const RECTOR = /^\s*run:\s*composer\s+run\s+rector\b/m
 
 describe('rector workflow', () => {
   it('installs dependencies before running rector', () => {
