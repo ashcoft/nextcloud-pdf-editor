@@ -130,6 +130,7 @@ fi
 # 5. A failed fetch restores the previous pin and checksum so a retry is not
 # skipped and the pin cannot point at a version the bundle does not hold.
 mk_failing_fetcher
+chmod 755 "${work}/fetcher.sh"
 origsum="$(read_sum)"
 goodsum="$(printf 'c%.0s' {1..64})"
 code="$(FAKE_TAG=0.32.0 FAKE_SUM="${goodsum}" run_bump 0.32.0)"
@@ -137,6 +138,14 @@ if [[ "${code}" != "0" && "$(read_pin)" == "0.20.0" && "$(read_sum)" == "${origs
     pass "restores the previous pin and checksum when the fetch fails"
 else
     fail "pin not fully restored after a failed fetch (exit ${code}, pin $(read_pin), sum $(read_sum))"
+fi
+
+# 5b. The restore must keep the fetcher executable: the backup is a rename over
+# the script, so a mode-600 temp file would leave it unrunnable.
+if [[ -x "${work}/fetcher.sh" ]]; then
+    pass "keeps the fetcher executable after a failed fetch"
+else
+    fail "the fetcher lost its executable bit after a failed fetch (mode $(stat -c '%a' "${work}/fetcher.sh"))"
 fi
 
 echo
