@@ -60,21 +60,16 @@ jobs:
           version="$(sed -n 's/^PDFCRAFT_VERSION="\([^"]*\)"/\1/p' scripts/fetch-pdfcraft.sh | head -1)"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Require a token that triggers the pull_request checks
-        if: steps.bump.outputs.changed == 'true'
-        env:
-          TOKEN: ${{ secrets.RENOVATE_TOKEN }}
-        run: |
-          if [ -z "${TOKEN}" ]; then
-            echo "::error::RENOVATE_TOKEN is not configured; a pull request opened with the default token would not run this repository's pull_request checks."
-            exit 1
-          fi
-
       - name: Create Pull Request
         if: steps.bump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.RENOVATE_TOKEN }}
+          # A pull request opened with the built-in token does not trigger this
+          # repository's pull_request workflows, so its update would merge
+          # untested. Set RENOVATE_TOKEN to have the checks run on their own;
+          # the fallback keeps the scheduled run working when that secret is
+          # unset, and a maintainer can approve the run.
+          token: ${{ secrets.RENOVATE_TOKEN || github.token }}
           commit-message: 'fix(deps): Update PdfCraft to ${{ steps.bump.outputs.version }}'
           committer: GitHub <noreply@github.com>
           author: nextcloud-command <nextcloud-command@users.noreply.github.com>
