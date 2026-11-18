@@ -35,6 +35,22 @@ commands:
           name: Install Composer dependencies
           command: composer install --no-interaction --no-progress --ignore-platform-reqs
 
+  install_node_dependencies:
+    description: Enable corepack and install the pnpm dependencies the frontend jobs share.
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            # corepack installs its pnpm/yarn shims into a directory on PATH.
+            # On the cimg images that is /usr/local/bin, which the non-root
+            # `circleci` user cannot write, so a bare `corepack enable` fails
+            # with EACCES; the image grants passwordless sudo.
+            sudo corepack enable
+            # CI is not a TTY, but be explicit: corepack otherwise prompts
+            # before downloading the pnpm version pinned in package.json.
+            export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            pnpm install --frozen-lockfile
+
 jobs:
   php-unit:
     executor: php
@@ -73,11 +89,7 @@ jobs:
     executor: node
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            corepack enable
-            pnpm install --frozen-lockfile
+      - install_node_dependencies
       - run:
           name: Lint
           command: pnpm run lint
@@ -99,11 +111,7 @@ jobs:
     executor: node
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            corepack enable
-            pnpm install --frozen-lockfile
+      - install_node_dependencies
       - run:
           name: Build the frontend bundle
           command: pnpm run build
