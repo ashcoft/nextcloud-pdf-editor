@@ -1,3 +1,13 @@
+# [1.1.0](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.0.0...v1.1.0) (2026-11-18)
+
+
+### Bug Fixes
+
+* **ci:** enable corepack with sudo so the CircleCI Node jobs can install pnpm ([3d718c6](https://github.com/ashcoft/nextcloud-pdf-editor/commit/3d718c62089d434d38e4e548396940b5766a91b9))
+* **ci:** restore the live PdfCraft bundle when a fetch is interrupted ([64e1d16](https://github.com/ashcoft/nextcloud-pdf-editor/commit/64e1d16a0523d1ea9e63cc88e7c3a15b4d4c6c4b))
+* **ci:** stop the Renovate and PdfCraft updaters failing on a missing secret ([1704c13](https://github.com/ashcoft/nextcloud-pdf-editor/commit/1704c130fff3889f4ab0c382a06cc5f6c384e932))
+* **deps:** update PdfCraft to 0.21.1 ([1861340](https://github.com/ashcoft/nextcloud-pdf-editor/commit/1861340441783045b31e604c72dc2acd735eba2b))
+
 # 1.0.0 (2026-11-10)
 
 
