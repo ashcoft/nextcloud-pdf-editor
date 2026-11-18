@@ -9,8 +9,8 @@
 # PDFCRAFT_VERSION and PDFCRAFT_SHA256 together, run it, and commit the result.
 set -euo pipefail
 
-PDFCRAFT_VERSION="0.20.0"
-PDFCRAFT_SHA256="5cd9da8025e5e4c587069f9ee5fbfeeb859f8fbc35bfdb0c63fc1f139d7240e6"
+PDFCRAFT_VERSION="0.21.1"
+PDFCRAFT_SHA256="fe9708d46af191aebb56f70eb32cf8b112b0b9452d17ae6ba3a8c4a8665fe748"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dest="${repo_root}/pdfcraft"
@@ -24,7 +24,16 @@ work="$(mktemp -d)"
 # work directory and both staging paths, so no exit path leaks them.
 staged="${repo_root}/.pdfcraft-staged.$$"
 backup="${repo_root}/.pdfcraft-backup.$$"
-cleanup() { rm -rf "${work}" "${staged}" "${backup}"; }
+# The trap also restores the backup when the destination is missing. Bash runs
+# an EXIT trap on SIGTERM and SIGINT as well, so a cancelled run interrupted
+# between the two renames below would otherwise delete the backup - the only
+# remaining copy of the live bundle - and leave the app without an editor.
+cleanup() {
+    if [[ -e "${backup}" && ! -e "${dest}" ]]; then
+        mv "${backup}" "${dest}"
+    fi
+    rm -rf "${work}" "${staged}" "${backup}"
+}
 trap 'cleanup' EXIT
 
 echo "Downloading ${url}"

@@ -61,5 +61,7 @@ jobs:
 
           echo "The committed bundle matches the pinned PdfCraft release."
 
-      - name: Test the updater script
-        run: bash tests/scripts/bump-pdfcraft.test.sh
+      - name: Test the updater and fetch scripts
+        run: |
+          bash tests/scripts/bump-pdfcraft.test.sh
+          bash tests/scripts/fetch-pdfcraft.test.sh

@@ -99,6 +99,10 @@ main() {
 
     backup="$(mktemp)"
     cp "${fetcher}" "${backup}"
+    # `mktemp` makes a mode-600 file, and the restore below is a rename, so the
+    # backup has to carry the fetcher's own mode or a failed run would leave the
+    # script non-executable.
+    chmod "$(stat -c '%a' "${fetcher}" 2>/dev/null || stat -f '%Lp' "${fetcher}")" "${backup}"
     rewrite_pin "${wanted}" "${checksum}"
 
     # The pin and the bundle move together: if the fetch fails, restore the old

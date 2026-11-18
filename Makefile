@@ -74,7 +74,7 @@ stage: build
 	rsync -a --delete \
 		--include='CHANGELOG.md' --include='l10n/' --include='l10n/**' \
 		--exclude='*.md' \
-		--exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='src' \
+		--exclude='.git' --exclude='.github' --exclude='.circleci' --exclude='node_modules' --exclude='src' \
 		--exclude='tests' --exclude='vendor-bin' --exclude='docs' --exclude='wiki' \
 		--exclude='scripts' \
 		--exclude='LICENSES' --exclude='AGENTS.md' --exclude='AI_POLICY.md' \

@@ -1,0 +1,132 @@
+# CircleCI configuration for the PDF Editor Nextcloud app.
+#
+# The GitHub Actions workflows remain the source of truth; this file runs the
+# same commands through CircleCI so the "CircleCI Pipeline" commit status is
+# meaningful instead of erroring on every push with
+#
+#     No configuration was found in your project.
+#
+# The jobs are split by toolchain so a failure names what broke: the PHP jobs
+# share the `cimg/php` image, the frontend jobs share `cimg/node`.
+#
+# SPDX-FileCopyrightText: 2026 PDF Editor Contributors
+# SPDX-License-Identifier: MIT
+
+version: 2.1
+
+# The app targets PHP ^8.4 (appinfo/info.xml), so the PHP jobs pin the 8.4 line
+# rather than the moving `current` tag. The image ships Composer and the
+# extensions the toolchain needs (intl, mbstring, zip, pdo_sqlite).
+executors:
+  php:
+    docker:
+      - image: cimg/php:8.4
+    resource_class: medium
+  node:
+    docker:
+      - image: cimg/node:24.22-browsers
+    resource_class: medium
+
+commands:
+  install_php_dependencies:
+    description: Install the Composer dependencies the PHP jobs share.
+    steps:
+      - run:
+          name: Install Composer dependencies
+          command: composer install --no-interaction --no-progress --ignore-platform-reqs
+
+  install_node_dependencies:
+    description: Enable corepack and install the pnpm dependencies the frontend jobs share.
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            # corepack installs its pnpm/yarn shims into a directory on PATH.
+            # On the cimg images that is /usr/local/bin, which the non-root
+            # `circleci` user cannot write, so a bare `corepack enable` fails
+            # with EACCES; the image grants passwordless sudo.
+            sudo corepack enable
+            # CI is not a TTY, but be explicit: corepack otherwise prompts
+            # before downloading the pnpm version pinned in package.json.
+            export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            pnpm install --frozen-lockfile
+
+jobs:
+  php-unit:
+    executor: php
+    steps:
+      - checkout
+      - install_php_dependencies
+      - run:
+          name: PHPUnit
+          command: composer run test:unit
+
+  php-static-analysis:
+    executor: php
+    steps:
+      - checkout
+      - install_php_dependencies
+      - run:
+          name: PHPStan
+          command: composer run phpstan
+      - run:
+          name: Psalm
+          command: composer run psalm
+
+  php-lint:
+    executor: php
+    steps:
+      - checkout
+      - install_php_dependencies
+      - run:
+          name: PHP syntax
+          command: composer run lint
+      - run:
+          name: Coding standards
+          command: composer run cs:check
+
+  frontend:
+    executor: node
+    steps:
+      - checkout
+      - install_node_dependencies
+      - run:
+          name: Lint
+          command: pnpm run lint
+      - run:
+          name: Stylelint
+          command: pnpm run stylelint
+      - run:
+          name: Type check
+          command: pnpm run check-types
+      - run:
+          name: Unit tests
+          command: pnpm test
+      - run:
+          name: Script tests
+          command: pnpm run test:scripts
+
+  e2e:
+    # The `-browsers` variant ships the shared libraries Chromium needs.
+    executor: node
+    steps:
+      - checkout
+      - install_node_dependencies
+      - run:
+          name: Build the frontend bundle
+          command: pnpm run build
+      - run:
+          name: Install Playwright browsers
+          command: pnpm exec playwright install --with-deps chromium
+      - run:
+          name: End-to-end tests
+          command: pnpm run test:e2e
+
+workflows:
+  ci:
+    jobs:
+      - php-unit
+      - php-static-analysis
+      - php-lint
+      - frontend
+      - e2e

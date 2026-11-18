@@ -20,7 +20,7 @@
     "lint": "eslint src/",
     "stylelint": "stylelint 'src/**/*.{vue,css}' 'css/**/*.css'",
     "test": "jest",
-    "test:scripts": "bash tests/scripts/bump-pdfcraft.test.sh",
+    "test:scripts": "bash tests/scripts/bump-pdfcraft.test.sh && bash tests/scripts/fetch-pdfcraft.test.sh",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
     "check-types": "vue-tsc --noEmit",
