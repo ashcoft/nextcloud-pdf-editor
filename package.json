@@ -34,7 +34,7 @@
     "vue": "3.5.45"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.0",
+    "@babel/core": "^8.1.2",
     "@babel/preset-env": "^8.0.0",
     "@babel/preset-typescript": "^8.0.0",
     "@commitlint/config-conventional": "^21.0.0",
