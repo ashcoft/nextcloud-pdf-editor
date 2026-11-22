@@ -20,7 +20,7 @@ version: 2.1
 executors:
   php:
     docker:
-      - image: cimg/php:8.4
+      - image: cimg/php:8.6
     resource_class: medium
   node:
     docker:
