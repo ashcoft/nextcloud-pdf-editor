@@ -24,7 +24,7 @@ executors:
     resource_class: medium
   node:
     docker:
-      - image: cimg/node:24.22-browsers
+      - image: cimg/node:24.22.3-browsers
     resource_class: medium
 
 commands:
