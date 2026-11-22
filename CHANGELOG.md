@@ -1,3 +1,9 @@
+## [1.1.3](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.2...v1.1.3) (2026-11-22)
+
+### Bug Fixes
+
+* **ci:** install pnpm without corepack on Node 26 ([#50](https://github.com/ashcoft/nextcloud-pdf-editor/issues/50)) ([ae8d1d4](https://github.com/ashcoft/nextcloud-pdf-editor/commit/ae8d1d47bb6ede2e00e5419efabd01a623dce752))
+
 ## [1.1.2](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.1...v1.1.2) (2026-11-22)
 
 
