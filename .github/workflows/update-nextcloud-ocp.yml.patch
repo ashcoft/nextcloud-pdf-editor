@@ -1,0 +1,34 @@
+# Re-applied by sync-workflow-templates.yml after each template sync.
+#
+# The upstream template assumes the default branch tracks Nextcloud development
+# master, and titles its pull request "[<branch>] Update nextcloud/ocp
+# dependency". This app tracks released Nextcloud versions (appinfo/info.xml
+# allows 34 and 35) and has no stable branches, so the patch pins the default
+# branch to the stable34 OCP line and gives the pull request a conventional
+# title that the Mergify merge protection accepts.
+--- a/.github/workflows/update-nextcloud-ocp.yml
++++ b/.github/workflows/update-nextcloud-ocp.yml
+@@ -85,9 +85,13 @@
+             COMPOSER_CMD='composer bin nextcloud-ocp'
+           fi
+ 
++          # This app tracks released Nextcloud versions (appinfo/info.xml
++          # allows 34 and 35) and keeps no stable branches, so the default
++          # branch pins the lowest supported OCP line instead of development
++          # master.
+           PACKAGE_VERSION="nextcloud/ocp:dev-$BRANCH_NAME"
+           if [[ "$BRANCH_NAME" == 'main' ]]; then
+-            PACKAGE_VERSION='nextcloud/ocp:dev-master'
++            PACKAGE_VERSION='nextcloud/ocp:dev-stable34'
+           fi
+ 
+           echo $COMPOSER_CMD require --dev $PACKAGE_VERSION
+@@ -111,7 +115,7 @@
+           author: nextcloud-command <nextcloud-command@users.noreply.github.com>
+           signoff: true
+           branch: 'automated/noid/${{ matrix.branches }}-update-nextcloud-ocp'
+-          title: '[${{ matrix.branches }}] Update nextcloud/ocp dependency'
++          title: 'chore(dev-deps): update nextcloud/ocp dependency'
+           add-paths: |
+             composer.json
+             composer.lock
