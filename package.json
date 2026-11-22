@@ -1,6 +1,6 @@
 {
   "name": "nextcloud-pdf-editor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Nextcloud app for reading and editing PDF files",
   "packageManager": "pnpm@12.21.0",

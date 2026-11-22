@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.0...v1.1.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **ci:** stop passing --threads to Psalm twice ([#47](https://github.com/ashcoft/nextcloud-pdf-editor/issues/47)) ([7ca467f](https://github.com/ashcoft/nextcloud-pdf-editor/commit/7ca467f43112ae1bdb881f4b166fea9ad3762a17))
+
 # [1.1.0](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.0.0...v1.1.0) (2026-11-18)
 
 
