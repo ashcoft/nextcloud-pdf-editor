@@ -41,6 +41,13 @@
         "phpunit/phpunit"
       ],
       "enabled": false
+    },
+    {
+      "description": "The app targets PHP ^8.4 and php-cs-fixer 3.95 refuses to run on PHP 8.6, so the CircleCI image stays on the 8.4 line",
+      "matchPackageNames": [
+        "cimg/php"
+      ],
+      "allowedVersions": "/^8\\.4/"
     }
   ],
   "composer": {
