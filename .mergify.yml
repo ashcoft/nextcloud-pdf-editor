@@ -1,0 +1,10 @@
+merge_protections:
+  - name: Enforce conventional commit
+    description: Make sure that we follow https://www.conventionalcommits.org/en/v1.0.0/
+    if:
+      - base = main
+    success_conditions:
+      # A type, an optional scope, an optional breaking-change marker, then a
+      # colon, a space and a non-empty description. The scope rejects inner
+      # parentheses so a malformed "fix(a)b): x" cannot slip through.
+      - "title ~= ^(fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^()]+\\))?!?: \\S"
