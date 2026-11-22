@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.4...v1.2.0) (2026-11-22)
+
+### Bug Fixes
+
+* **deps:** update vue-dependencies to v3.5.46 ([73c227d](https://github.com/ashcoft/nextcloud-pdf-editor/commit/73c227d59697297b43d7914722ae0965a4754b68))
+
 ## [1.1.4](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.3...v1.1.4) (2026-11-22)
 
 ### Bug Fixes
