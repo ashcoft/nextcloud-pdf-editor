@@ -1,3 +1,9 @@
+# [1.3.0](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.2.0...v1.3.0) (2026-11-24)
+
+### Bug Fixes
+
+* **deps:** update PdfCraft to 0.22.0 ([422f902](https://github.com/ashcoft/nextcloud-pdf-editor/commit/422f9022bdc67ca065e321c0edf955cbb687732c))
+
 # [1.2.0](https://github.com/ashcoft/nextcloud-pdf-editor/compare/v1.1.4...v1.2.0) (2026-11-22)
 
 ### Bug Fixes
