@@ -9,8 +9,8 @@
 # PDFCRAFT_VERSION and PDFCRAFT_SHA256 together, run it, and commit the result.
 set -euo pipefail
 
-PDFCRAFT_VERSION="0.21.1"
-PDFCRAFT_SHA256="fe9708d46af191aebb56f70eb32cf8b112b0b9452d17ae6ba3a8c4a8665fe748"
+PDFCRAFT_VERSION="0.22.0"
+PDFCRAFT_SHA256="5da6db0d6d0d5ae517e9bb62c39eb57285f8befd81ef6555e9a807ccf5da5954"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dest="${repo_root}/pdfcraft"
